@@ -6,7 +6,7 @@ import java.io.IOException;
 
 public class SplitFile {
 	private static String FILE_NAME = "C://Users//hamsi//Desktop//CNProject//src//TextFile.txt";
-	private static byte PART_SIZE = PieceSize;
+	private static byte PART_SIZE = 0;
 	public SplitFile(String FILE_NAME) {
 		
 		File inputFile = new File(FILE_NAME);

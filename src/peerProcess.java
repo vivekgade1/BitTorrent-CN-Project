@@ -1,13 +1,10 @@
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Properties;
-//import java.util.logging.Logger;
+import java.util.logging.Logger;
 import java.util.*;
-import java.util.Properties;
 
 
 public class peerProcess {
@@ -22,7 +19,7 @@ public class peerProcess {
     public static  HashMap<Integer, String> peer_info_map = new HashMap<>();
     public static  HashMap<Integer, Boolean[]> peer_bitfields = new HashMap<>();
     static Logger myLogger;
-    public static int[] my_bitsfield;
+    public static int[] my_bitfield;
     //    Setup variables:
     public static int unchoking_interval;
     public static int opt_unchoking_interval;
@@ -96,9 +93,9 @@ public class peerProcess {
                 else Arrays.fill(bitmap, false);
 
                 if(parts[0].equals(my_id)){
-                    my_bitsfield = new int[piece_size];
+                    my_bitfield = new int[piece_size];
                     if(parts[3].equals("1")){
-                        Arrays.fill(my_bitsfield,2); // setting the bits field to 2 in my bits field because its the server and has the file.
+                        Arrays.fill(my_bitfield,2); // setting the bits field to 2 in my bits field because its the server and has the file.
                         my_cnt = max_bitfield_count; // setting the my count to max because i have the file.
                     }
                 }
@@ -129,6 +126,7 @@ public class peerProcess {
         initialSetup(args[0]);
 
         peerProcess pp = new peerProcess();
+        pp.listening_port = Integer.parseInt(peerProcess.peer_info_map.get(my_peer_id).split(" ")[1]);
 
         //		start Listening thread, and Server and Client controllers for peerProcess
         try {
@@ -150,13 +148,22 @@ public class peerProcess {
 
     public static Boolean IsSomethingLeftToDownload(){
         //should keep checking infinitely until some peer comes online?
-        my_cnt=-1;	//For testing only. remove this
-        if(my_cnt<piece_cnt)return false;
-        return true;
+//        my_cnt=-1;	//For testing only. remove this
+//        if(my_cnt<piece_cnt)return false;
+
+        if(my_cnt == max_bitfield_count){
+            return false;
+        }else{
+            return true;
+        }
     }
 
     public static Boolean IsAnyoneLeftToDownload(){
-        return false;
+        if(my_cnt == 0){
+            return false;
+        }else{
+            return true;
+        }
     }
 
     public static String getTime() {
@@ -189,12 +196,47 @@ class ListeningThread implements Runnable{
 
     @Override
     public void run(){
-
-        while(peerProcess.IsAnyoneLeftToDownload() || peerProcess.IsSomethingLeftToDownload()){
+        Socket server_cc_socket = null;
+        while(peerProcess.IsAnyoneLeftToDownload() || peerProcess.IsSomethingLeftToDownload() ){
 //			server socket
 //			server accept
+            try {
+                server_cc_socket = this.listeningSocket.accept();
+                //DataInputStream  in_from_client = new DataInputStream (server_cc_socket.getInputStream());
+                //DataOutputStream out_to_client = new DataOutputStream(server_cc_socket.getOutputStream());
+
+                ObjectOutputStream out_to_client_obj = new ObjectOutputStream(server_cc_socket.getOutputStream());
+                ObjectInputStream in_frm_client_obj = new ObjectInputStream(server_cc_socket.getInputStream());
+
+                int[] client_bitfield = (int[])in_frm_client_obj.readObject();
+                System.out.println("Bit field received from the client");
+                out_to_client_obj.writeObject(peerProcess.my_bitfield);
+                System.out.println("Server bit field sent.");
+
+
+                //byte[] rec_from_client = new byte[1024];
+                //in_from_client.read(rec_from_client, 0, 1024);
+                String connection_response =(String) in_frm_client_obj.readObject();
+                System.out.println("interested message recieved from the client.");
+                switch (connection_response){
+                    case "interested":
+                        sendingThread = new Thread(new ServerThread(this.listeningSocket,server_cc_socket, this.peerID,in_frm_client_obj,out_to_client_obj));
+                        sendingThread.start();
+                        break;
+                    case "have":
+                        break;
+                    default:
+                        server_cc_socket.close();
+                        // drop connection
+                        break;
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
 //			wait for bitsfield
-//			send my_bitsfield
+//			send my_bitfield
 //			wait for resonse
 //			switch(resonse){
 //			case "interested":
@@ -275,6 +317,54 @@ class ClientController implements Runnable{
     @Override
     public void run(){
         while(peerProcess.IsSomethingLeftToDownload()){
+
+            try {
+                for (int peer_id: peerProcess.peer_info_map.keySet()) {
+                    if(peer_id < this.peerID){
+                        String[] peer_ip = peerProcess.peer_info_map.get(peer_id).split(" ");
+                        this.remoteSocket = new Socket(peer_ip[0], Integer.parseInt(peer_ip[1]));
+                        ObjectOutputStream out_to_server_obj = new ObjectOutputStream(this.remoteSocket.getOutputStream());
+                        ObjectInputStream in_frm_server_obj = new ObjectInputStream(this.remoteSocket.getInputStream());
+
+                        out_to_server_obj.writeObject(peerProcess.my_bitfield);
+                        System.out.println("Client bitflied sent.");
+                        int[] server_bitfield = (int[])in_frm_server_obj.readObject();
+                        System.out.println("Server bitfield recieved.");
+                        String message = null;
+                        ArrayList req_pieces = compareBitFields(server_bitfield);
+                        if(req_pieces.size()!=0){
+                            message = "interested";
+                            out_to_server_obj.writeObject(message);
+                            System.out.println("Interested message sent.");
+                            String message_frm_server = (String) in_frm_server_obj.readObject();
+                            System.out.println("Received unchoke from the server");
+                            System.out.println("received " + message_frm_server);
+                            if(message_frm_server.equals("unchoke")){
+                                sendingThread = new Thread(new ClientThread(this.listeningSocket,this.peerID,(int)req_pieces.get(0),this.remoteSocket,in_frm_server_obj,out_to_server_obj));
+                                sendingThread.start();
+                            }else{
+                                this.remoteSocket.close();
+                            }
+
+
+                        }else{
+                            message = "not interested";
+                            out_to_server_obj.writeObject(message);
+                            this.remoteSocket.close();
+                        }
+
+
+
+                    }
+                }
+
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+
 //			list of peers = select peers who have not "choked me" and are not connected		(also check if they have something to offer? No?)
 //			for(every selected peer){
 //				send TCP req if not connected already(and exchage bitsfield)
@@ -289,6 +379,16 @@ class ClientController implements Runnable{
 //			}
         }
     }
+
+    private ArrayList<Integer> compareBitFields(int[] server_bitfield) {
+        ArrayList<Integer> piece_indxs = new ArrayList<>();
+        for (int i = 0; i < server_bitfield.length ; i++) {
+            if(server_bitfield[i] !=0 && peerProcess.my_bitfield[i] ==0){
+                piece_indxs.add(i);
+            }
+        }
+        return piece_indxs;
+    }
 }
 
 
@@ -297,43 +397,105 @@ class ClientController implements Runnable{
 
 class ServerThread implements Runnable{
 
+    private Socket live_connection;
     private ServerSocket listeningSocket;
     private int peerID;
+    private ObjectOutputStream out_to_client;
+    private ObjectInputStream in_frm_client;
+
     Socket remoteSocket;
     Thread sendingThread;
 
-    public ServerThread(ServerSocket socket, int peerID)
+    public ServerThread(ServerSocket socket, Socket connection ,int peerID,ObjectInputStream input ,ObjectOutputStream output)
     {
         this.listeningSocket = socket;
+        this.live_connection = connection;
         this.peerID = peerID;
+        this.in_frm_client = input;
+        this.out_to_client = output;
     }
 
     @Override
     public void run(){
+
+        while (true) {
+            try {
+                //DataInputStream  in_from_client = new DataInputStream (this.listeningSocket.getInputStream());
+                //DataOutputStream out_to_client = new DataOutputStream(this.listeningSocket.getOutputStream());
+
+
+                //if(mssg_from_client.equals("interested")){
+                System.out.println("Server thread started.");
+                String message ="unchoke";
+                this.out_to_client.writeObject(message);
+                System.out.println("Sent unchoke to client");
+
+                String piece_num = (String)this.in_frm_client.readObject();
+                System.out.println("Received piece number.");
+                //System.out.println( piece_num +" is the part");
+                String src_file_path = "sample.txt";
+                    //
+                    //  int i =(int) RecFromClient;
+                    //   for(int i=0;i<5;i++)
+                    //   {
+                String file_name = src_file_path+".part"+ piece_num;
+                sendFile(file_name, this.listeningSocket,  this.in_frm_client, this.out_to_client);
+                    //   }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
 //		private information about the client
-        while(/*(!is_choked(cleint)) &&*/ peerProcess.IsAnyoneLeftToDownload(/*CURRENT CLIENT*/)){	//server could choke the client from SERVER CONTROLLER. stop sending then
+        //while(/*(!is_choked(cleint)) &&*/ peerProcess.IsAnyoneLeftToDownload(/*CURRENT CLIENT*/)){	//server could choke the client from SERVER CONTROLLER. stop sending then
 //			wait for request
 //			if(invalid request) break the connection
 //			send the piece requested.
         }
     }
+
+    public static void sendFile(String file_name, ServerSocket server_cc_socket, ObjectInputStream in_from_client , ObjectOutputStream out_to_client) {
+            try {
+
+                File file_to_send = new File(file_name);
+                byte[] byteArray = new byte[(int) file_to_send.length()];
+
+                FileInputStream file_input_strm = new FileInputStream(file_to_send);
+                BufferedInputStream file_buff_strm = new BufferedInputStream(file_input_strm);
+
+                DataInputStream data_strm = new DataInputStream(file_buff_strm);
+                data_strm.readFully(byteArray, 0, byteArray.length);
+                out_to_client.writeObject(byteArray);
+                out_to_client.flush();
+                System.out.println("File " + file_name + " sent to Client.");
+                out_to_client.close();
+            } catch (Exception e) {
+                System.err.println("File sending Error!! name : "+ file_name + e);
+            }
+        }
 }
 
 
-
-//	clientThread
+    //	clientThread
 //hashmap<piece_index, int>piece_status: //0 means not downloaded, 1 = currently downloaded, 2 = downloaded
 class ClientThread implements Runnable{
-
+    private ObjectInputStream in_frm_server;
+    private ObjectOutputStream out_to_server;
     private ServerSocket listeningSocket;
+    private int piece;
     private int peerID;
     Socket remoteSocket;
     Thread sendingThread;
 
-    public ClientThread(ServerSocket socket, int peerID)
+    public ClientThread(ServerSocket socket, int peerID, int piece_indx, Socket mySocket, ObjectInputStream input, ObjectOutputStream ouput)
     {
         this.listeningSocket = socket;
         this.peerID = peerID;
+        this.piece = piece_indx;
+        this.remoteSocket = mySocket;
+        this.out_to_server = ouput;
+        this.in_frm_server = input;
     }
 
     @Override
@@ -341,6 +503,7 @@ class ClientThread implements Runnable{
 //		private information about the server
 
         while(peerProcess.IsSomethingLeftToDownload(/*FROM THIS SERVER*/)){
+
 //			piece = check Bitsfield of S; what you need to download from it; (that u are not downloading from other peer also)
 //			change download status of piece = 1;
 //			start(time)
@@ -350,13 +513,37 @@ class ClientThread implements Runnable{
 //			updateAvgDS(sever, time)	//download speed
 //			if(got_piece_correctly){
 //				piece_status[piece] =2;
-//				update my_bitsfield
+//				update my_bitfield
 //				update my_cnt;
 //			}else{
 //				if(piece_status[piece]==1)	//CHECK becz: somebody else may have downloaded it correctly and changed status to 2!
 //					piece_status[piece] =0
 //				drop_connection();
 //			}
+            try {
+                //DataOutputStream out_to_server_obj = new DataOutputStream(this.remoteSocket.getOutputStream());
+                //DataInputStream in_frm_server_obj = new DataInputStream(this.remoteSocket.getInputStream());
+                //out_to_server_obj.writeObject(this.piece);
+                System.out.println("Client thread started.");
+                this.out_to_server.writeObject(Integer.toString(this.piece));
+                System.out.println("Piece number sent to the server");
+                byte[]RecData = (byte[])this.in_frm_server.readObject();
+                String SaveFileName = "TextFileFromServer.txt.part"+this.piece;
+                OutputStream Fs = new FileOutputStream  (SaveFileName);
+                Fs.write(RecData);
+                System.out.println("File " + SaveFileName + " received.");
+                Fs.close();
+                this.in_frm_server.close();
+                this.out_to_server.close();
+                this.remoteSocket.close();
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+
+
         }
     }
 }

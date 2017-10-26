@@ -6,3 +6,6 @@
 .settings/
 bin/
 build/
+.idea
+out/
+*.iml

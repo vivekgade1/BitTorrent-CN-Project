@@ -7,9 +7,9 @@ import java.util.List;
 public class MergeFile{
 
 	public void Merge(int n) {
-		int peerID = my_peer_id;
+		int peerID = 0;
 		String MergedFILE_NAME = "C:\\Users\\hamsi\\Desktop\\CNProject\\src\\";
-		private static String SourceFILE_NAME = "C://Users//hamsi//Desktop//CNProject//src//TextFile.txt";
+		String SourceFILE_NAME = "C://Users//hamsi//Desktop//CNProject//src//TextFile.txt";
 
 		boolean f = new File(MergedFILE_NAME+"peer_"+peerID).mkdir();
 
