@@ -5,8 +5,8 @@ import java.io.IOException;
 
 
 public class SplitFile {
-	private static String FILE_NAME = "C://Users//hamsi//Desktop//CNProject//src//TextFile.txt";
-	private static byte PART_SIZE = 0;
+	private static String FILE_NAME = "peer_1001/sample.txt";
+	private static byte PART_SIZE = 5;
 	public SplitFile(String FILE_NAME) {
 		
 		File inputFile = new File(FILE_NAME);
