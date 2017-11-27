@@ -12,7 +12,6 @@ public class MergeFile{
 		String SourceFILE_NAME = "C://Users//hamsi//Desktop//CNfinal//BitTorrent-CN-Project//src//sample.txt";
 		new File("C://Users//hamsi//Desktop//CNfinal//BitTorrent-CN-Project//src//peer_0").mkdir();
 
-//		new File("peer_"+peerID).mkdir();
 
 		File ofile = new File("C://Users//hamsi//Desktop//CNfinal//BitTorrent-CN-Project//src//peer_0//NewFile.txt");
 		FileOutputStream fos;
