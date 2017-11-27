@@ -1,6 +1,8 @@
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.Collections;
 
 public class MessageType {
 	public static  int Total_len;
@@ -310,19 +312,16 @@ public class MessageType {
 
 	static byte[] integersToBytes(int[] values)
 	{
-	   ByteArrayOutputStream baos = new ByteArrayOutputStream();
-	   DataOutputStream dos = new DataOutputStream(baos);
+	   //ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		byte[] bytes = new byte[values.length];
+	   //DataOutputStream dos = new DataOutputStream(baos);
 	   for(int i=0; i < values.length; ++i)
 	   {
-	        try {
-				dos.writeInt(values[i]);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			bytes[i] = (byte)(values[i] >>> (i * 8));
+
 	   }
 
-	   return baos.toByteArray();
+	   return bytes;
 	}
 
 	public static byte[] sendBitfeild(int[] my_bitfeild)
@@ -330,23 +329,24 @@ public class MessageType {
 		PAYLOAD_LEN = my_bitfeild.length;
 		MESSAGE_LEN = MESSAGE_TYPE_LEN + PAYLOAD_LEN;
 		Total_len = MESSAGE_LENGTH_SIZE + MESSAGE_TYPE_LEN + PAYLOAD_LEN;
-		byte[] message = new byte[Total_len];
-		try
-		{
+		//byte[] message =
 		byte[] mess_length = Integer.toString(MESSAGE_LEN).getBytes();
 		byte[] mess_type = "5".getBytes();
 		byte[] payload = integersToBytes(my_bitfeild);
-		System.arraycopy(mess_length, 0, message, 0, MESSAGE_LENGTH_SIZE);
+		ByteBuffer message = ByteBuffer.wrap(new byte[Total_len]);
+		message.put(mess_length);
+		message.put(mess_type);
+		message.put(payload);
+		/*System.arraycopy(mess_length, 0, message, 0, MESSAGE_LENGTH_SIZE);
 		System.arraycopy(mess_type, 0, message, MESSAGE_LENGTH_SIZE, MESSAGE_TYPE_LEN);
 		System.arraycopy(payload, 0, message, MESSAGE_LENGTH_SIZE + MESSAGE_TYPE_LEN, PAYLOAD_LEN);
 		}
 		catch (Exception e)
 		{
 			message = null;
-		}
+		}*/
 
-		return message;
-
+		return message.array();
 	}
 
 	public static int[] convertToIntArray(byte[] input)
@@ -359,14 +359,14 @@ public class MessageType {
 	    return ret;
 	}
 
-	public static int[] receiveBitfeild(byte[] bitfeildmessage)
+	public static int[] receiveBitfeild(byte[] bitfieldmessage)
 	{
-		PAYLOAD_LEN = bitfeildmessage.length - MESSAGE_LENGTH_SIZE - MESSAGE_TYPE_LEN;
+		PAYLOAD_LEN = bitfieldmessage.length - MESSAGE_LENGTH_SIZE - MESSAGE_TYPE_LEN;
 		MESSAGE_LEN = MESSAGE_TYPE_LEN + PAYLOAD_LEN;
 		byte[] message = new byte[PAYLOAD_LEN];
 		try
 		{
-		System.arraycopy(bitfeildmessage, MESSAGE_LENGTH_SIZE+MESSAGE_TYPE_LEN, message, 0, PAYLOAD_LEN);
+		System.arraycopy(bitfieldmessage, MESSAGE_LENGTH_SIZE+MESSAGE_TYPE_LEN, message, 0, PAYLOAD_LEN);
 		}
 		catch (Exception e)
 		{
