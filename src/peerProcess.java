@@ -13,11 +13,10 @@ import java.util.*;
 
 
 public class peerProcess {
-
     public static int my_peer_id;
     public static ArrayList<Integer> present_connections = new ArrayList<>();
-    public static ArrayList<Integer> present_client_connections = new ArrayList<>();
-    public static ArrayList<Integer> present_server_connections = new ArrayList<>();
+    public static Set<Integer> present_client_connections = new HashSet<>();
+    public static Set<Integer> present_server_connections = new HashSet<>();
 
     public int listening_port;
     public ServerSocket listening_socket;
@@ -79,11 +78,11 @@ public class peerProcess {
         new File("peer_" + my_id).mkdir();
 //		read common.cfg and peer_info.cfg
         try {
-            File common_config_file = new File("common.cfg");
+            File common_config_file = new File("src/common.cfg");
             FileInputStream commons_file_reader = new FileInputStream(common_config_file);
             BufferedReader commons_buff_reader = new BufferedReader(new InputStreamReader(commons_file_reader));
 
-            File peer_info_file = new File("PeerInfo.cfg");
+            File peer_info_file = new File("src/PeerInfo.cfg");
             FileInputStream peer_file_reader = new FileInputStream(peer_info_file);
             BufferedReader peer_buff_reader = new BufferedReader(new InputStreamReader(peer_file_reader));
             String line = null;
@@ -296,15 +295,17 @@ class ListeningThread implements Runnable{
 //			server socket
 //			server accept
             try {
-                server_cc_socket = this.listeningSocket.accept();
+
                 //DataInputStream  in_from_client = new DataInputStream (server_cc_socket.getInputStream());
                 //DataOutputStream out_to_client = new DataOutputStream(server_cc_socket.getOutputStream());
-
+                server_cc_socket = this.listeningSocket.accept();
                 ObjectOutputStream out_to_client_obj = new ObjectOutputStream(server_cc_socket.getOutputStream());
                 ObjectInputStream in_frm_client_obj = new ObjectInputStream(server_cc_socket.getInputStream());
 
-                int client_peer_id= (int)in_frm_client_obj.readObject();	//Handshake
-                out_to_client_obj.writeObject(peerProcess.my_peer_id);
+                byte[] hs_msg = (byte[])in_frm_client_obj.readObject();
+                Handshake.receiveMessage(hs_msg);	//Handshake
+                int client_peer_id= Integer.parseInt(Handshake.received_peerID);
+                out_to_client_obj.writeObject(Handshake.sendMessage(peerProcess.my_peer_id));
 
                 int[] client_bitfield = (int[])in_frm_client_obj.readObject();
                 peerProcess.updatePeerBitfields(client_peer_id, client_bitfield);
@@ -324,7 +325,7 @@ class ListeningThread implements Runnable{
                     		out_to_client_obj.writeObject("choke");
                     		server_cc_socket.close();
                     	}else{
-                    		spawnThread = new Thread(new ServerThread(this.listeningSocket,server_cc_socket, client_peer_id,in_frm_client_obj,out_to_client_obj));
+                            spawnThread = new Thread(new ServerThread(this.listeningSocket,server_cc_socket, client_peer_id,in_frm_client_obj,out_to_client_obj));
                     		peerProcess.present_client_connections.add(client_peer_id);
                     		spawnThread.start();		//TODO HANDLE in thread: //1. server_cc_socket.close(); 2.  present_client_connections.remove()
                     	}
@@ -443,61 +444,62 @@ class ServerController implements Runnable{
          // Iterating over keys only: https://stackoverflow.com/questions/1066589/iterate-through-a-hashmap
             for (Integer peer_id : peerProcess.peer_info_map.keySet()) {
 //                System.out.println("Key = " + key);
-            	if(topk.contains(peer_id)){
-            		peerProcess.peer_choke_status.put(peer_id, false);	//unchoke them
+                if (peer_id < peerProcess.my_peer_id) {
+                    if(topk.contains(peer_id) || topk.size()==0){
+                        peerProcess.peer_choke_status.put(peer_id, false);	//unchoke them
 
-            		//if not presently connected, try to connect. send "HAVE piece_id"
-            		if(!peerProcess.present_client_connections.contains(peer_id)){
+                        //if not presently connected, try to connect. send "HAVE piece_id"
+                        if(!peerProcess.present_client_connections.contains(peer_id)){
 
-                         try {
-                        	 String[] peer_ip = peerProcess.peer_info_map.get(peer_id).split(" ");
-                        	 this.remoteSocket = new Socket(peer_ip[0], Integer.parseInt(peer_ip[1]));
-                        	 ObjectOutputStream out_to_client_obj = new ObjectOutputStream(this.remoteSocket.getOutputStream());
-		                     ObjectInputStream in_frm_client_obj = new ObjectInputStream(this.remoteSocket.getInputStream());
+                            try {
+                                 String[] peer_ip = peerProcess.peer_info_map.get(peer_id).split(" ");
+                                 this.remoteSocket = new Socket(peer_ip[0], Integer.parseInt(peer_ip[1]));
+                                 ObjectOutputStream out_to_client_obj = new ObjectOutputStream(this.remoteSocket.getOutputStream());
+                                 ObjectInputStream in_frm_client_obj = new ObjectInputStream(this.remoteSocket.getInputStream());
 
-		                     out_to_client_obj.writeObject(peerProcess.my_peer_id);
-		                     int client_peer_id= (int)in_frm_client_obj.readObject();	//Handshake
+                                 out_to_client_obj.writeObject(peerProcess.my_peer_id);
+                                 int client_peer_id= (int)in_frm_client_obj.readObject();	//Handshake
 
-		                     out_to_client_obj.writeObject(peerProcess.my_bitfield);
-		                     System.out.println("Server bitflied sent.");
-		                     int[] client_bitfield = (int[])in_frm_client_obj.readObject();
-		                     System.out.println("Client bitfield recieved.");
-		                     peerProcess.updatePeerBitfields(peer_id, client_bitfield);
+                                 out_to_client_obj.writeObject(peerProcess.my_bitfield);
+                                 System.out.println("Server bitflied sent.");
+                                 int[] client_bitfield = (int[])in_frm_client_obj.readObject();
+                                 System.out.println("Client bitfield recieved.");
+                                 peerProcess.updatePeerBitfields(peer_id, client_bitfield);
 
-		                     String message = null;
-		                     peerProcess.present_client_connections.add(peer_id);
+                                 String message = null;
+                                 peerProcess.present_client_connections.add(peer_id);
 
-		                     int piece_id = peerProcess.havePieceId(peer_id);
-		                     if(piece_id != -1){
-			                     message = "have"+" "+piece_id;		//split at receiver: ListenerController
-			                     out_to_client_obj.writeObject(message);
-		                         System.out.println("HAVE message sent.");
+                                 int piece_id = peerProcess.havePieceId(peer_id);
+                                 if(piece_id != -1){
+                                     message = "have"+" "+piece_id;		//split at receiver: ListenerController
+                                     System.out.println("HAVE message sent.");
+                                     out_to_client_obj.writeObject(message);
 
-		                         String response = (String) in_frm_client_obj.readObject();
-		                         System.out.println("Received response from the client: "+ response);
+                                     String response = (String) in_frm_client_obj.readObject();
+                                     System.out.println("Received response from the client: "+ response);
 
-		                         if(response.equals("interested")){
-		                        	 out_to_client_obj.writeObject("unchoke");	//expect a request response from client
-		                             sendingThread = new Thread(new ServerThread(this.listeningSocket, this.remoteSocket, client_peer_id, in_frm_client_obj, out_to_client_obj));
-		                             sendingThread.start();
-		                         }else{
-		                             peerProcess.present_server_connections.remove(peer_id);
-		                             this.remoteSocket.close();
-		                         }
-		                     }
+                                     if(response.equals("interested")){
+                                         sendingThread = new Thread(new ServerThread(this.listeningSocket, this.remoteSocket, client_peer_id, in_frm_client_obj, out_to_client_obj));
+                                         sendingThread.start();
+                                     }else{
+                                         peerProcess.present_server_connections.remove(peer_id);
+                                         this.remoteSocket.close();
+                                     }
+                                 }
 
-						} catch (Exception e) {
-							e.printStackTrace();
-						}
-            		}
-            	}else{
-            		//If this server was currently sending. it will not send next piece. and send choke to it from Server Thread
-            		peerProcess.peer_choke_status.put(peer_id, true);	//choke them
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }else{
+                        //If this server was currently sending. it will not send next piece. and send choke to it from Server Thread
+                        peerProcess.peer_choke_status.put(peer_id, true);	//choke them
 //            		TODO Ensure CLEAN EXIT:
 //            		in SERVER THREAD: send "choke" on exit: CHECK WHILE LOOP
 //            	    in Client THREAD: handle receive "choke"
 
-            	}
+                    }
+                }
 
             }
 
@@ -536,25 +538,6 @@ class ServerController implements Runnable{
 
     }
 
-    public boolean Countdown (int seconds){
-            if (seconds < 0) {
-                System.err.println("Usage: java Countdown <time in secs>");
-                System.exit(1);
-            }
-            final Timer timer = new Timer();
-            timer.scheduleAtFixedRate(new TimerTask() {
-                int i = seconds;
-                public void run() {
-                    System.out.println(i--);
-                    if (i< 0) {
-                        timer.cancel();
-                    }
-
-                }
-            }, 0, 1000);
-            return true;
-    }
-
 }
 
 
@@ -585,8 +568,16 @@ class ClientController implements Runnable{
                         ObjectOutputStream out_to_server_obj = new ObjectOutputStream(this.remoteSocket.getOutputStream());
                         ObjectInputStream in_frm_server_obj = new ObjectInputStream(this.remoteSocket.getInputStream());
 
-                        out_to_server_obj.writeObject(peerProcess.my_peer_id);
-                        int server_peer_id= (int)in_frm_server_obj.readObject();	//Handshake
+
+                        //out_to_server_obj.writeObject(peerProcess.my_peer_id);
+                        out_to_server_obj.writeObject(Handshake.sendMessage(peerProcess.my_peer_id));
+                        Handshake.receiveMessage((byte[]) in_frm_server_obj.readObject());	//Handshake
+
+                        if(Handshake.verifyHandshake(peer_id) != 1){
+                            System.out.println("hand shake failed with  : " + peer_id);
+                            this.remoteSocket.close();
+                            continue;
+                        }
 
                         out_to_server_obj.writeObject(peerProcess.my_bitfield);
                         System.out.println("Client bitflied sent.");
@@ -596,6 +587,9 @@ class ClientController implements Runnable{
 
                         String message = null;
                         peerProcess.present_server_connections.add(peer_id);
+                        //have message
+                        //String response = (String)in_frm_server_obj.readObject();
+
                         if(peerProcess.getPieceId(peer_id)!=-1){	//updateServerBitField(server_bitfield,peerProcess.peer_bitfields.get(peer_id))){
                             message = "interested";
                             out_to_server_obj.writeObject(message);
@@ -604,7 +598,7 @@ class ClientController implements Runnable{
                             System.out.println("Received unchoke from the server");
                             System.out.println("received " + message_frm_server);
                             if(message_frm_server.equals("unchoke")){
-                                sendingThread = new Thread(new ClientThread(this.listeningSocket, this.remoteSocket, server_peer_id, in_frm_server_obj, out_to_server_obj));
+                                sendingThread = new Thread(new ClientThread(this.listeningSocket, this.remoteSocket, peer_id, in_frm_server_obj, out_to_server_obj));
                                 sendingThread.start();
                             }else{
                                 peerProcess.present_server_connections.remove(peer_id);
@@ -788,8 +782,11 @@ class ClientThread implements Runnable{
                 System.out.println("File " + SaveFileName + " received.");
                 Fs.close();
 
-                peerProcess.peer_download_time.put(server_peer_id, peerProcess.peer_download_time.get(server_peer_id) + (int) (end-start));
-                peerProcess.peer_download_cnt.put(server_peer_id, peerProcess.peer_download_cnt.get(server_peer_id) + 1);
+                int present_time  = peerProcess.peer_download_time.get(server_peer_id) == null?0:peerProcess.peer_download_time.get(server_peer_id);
+                int present_cnt  = peerProcess.peer_download_cnt.get(server_peer_id) == null?0:peerProcess.peer_download_time.get(server_peer_id);
+                peerProcess.peer_download_time.put(server_peer_id, present_time + (int) (end-start));
+                peerProcess.peer_download_cnt.put(server_peer_id, present_cnt + 1);
+
                 double rate = (double)peerProcess.peer_download_time.get(server_peer_id) / peerProcess.peer_download_cnt.get(server_peer_id);
                 peerProcess.peer_download_rate.put(server_peer_id, rate);
 
