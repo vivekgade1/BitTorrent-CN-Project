@@ -5,10 +5,10 @@ import java.io.IOException;
 
 
 public class SplitFile {
-	private static String FILE_NAME = "peer_1001/sample.txt";
+	public static String FILE_NAME = "C://Users//hamsi//Desktop//CNfinal//BitTorrent-CN-Project//src//sample.txt";
 	private static byte PART_SIZE = 5;
-	public SplitFile(String FILE_NAME) {
-		
+	public static void SplitFileMethod(String FILE_NAME) {
+
 		File inputFile = new File(FILE_NAME);
 		FileInputStream inputStream;
 		String newFileName;
@@ -40,6 +40,10 @@ public class SplitFile {
 		} catch (IOException exception) {
 			exception.printStackTrace();
 		}
+	}
+
+	public static void main(String[] args){
+		SplitFileMethod(FILE_NAME);
 	}
 }
 

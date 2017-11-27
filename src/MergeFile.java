@@ -6,14 +6,15 @@ import java.util.List;
 
 public class MergeFile{
 
-	public void Merge(int n) {
+	public static void Merge(int n) {
 		int peerID = 0;
-		String MergedFILE_NAME = "C:\\Users\\hamsi\\Desktop\\CNProject\\src\\";
-		String SourceFILE_NAME = "C://Users//hamsi//Desktop//CNProject//src//TextFile.txt";
+		String MergedFILE_NAME;
+		String SourceFILE_NAME = "C://Users//hamsi//Desktop//CNfinal//BitTorrent-CN-Project//src//sample.txt";
+		new File("C://Users//hamsi//Desktop//CNfinal//BitTorrent-CN-Project//src//peer_0").mkdir();
 
-		boolean f = new File(MergedFILE_NAME+"peer_"+peerID).mkdir();
+//		new File("peer_"+peerID).mkdir();
 
-		File ofile = new File(MergedFILE_NAME+"\\peer_"+peerID+"\\NewFile.txt");
+		File ofile = new File("C://Users//hamsi//Desktop//CNfinal//BitTorrent-CN-Project//src//peer_0//NewFile.txt");
 		FileOutputStream fos;
 		FileInputStream fis;
 
@@ -25,6 +26,7 @@ public class MergeFile{
 		list.add(new File(SourceFILE_NAME+".part"+i));
 
 		try {
+			System.out.println("here");
 		    fos = new FileOutputStream(ofile,false);
 		    for (File file : list) {
 		        fis = new FileInputStream(file);
@@ -41,6 +43,9 @@ public class MergeFile{
 		}catch (Exception exception){
 			exception.printStackTrace();
 		}
+	}
+	public static void main(String[] args){
+		Merge(3);
 	}
 }
 
