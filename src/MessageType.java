@@ -2,6 +2,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.BitSet;
 import java.util.Collections;
 
 public class MessageType {
@@ -326,37 +327,45 @@ public class MessageType {
 
 	public static byte[] sendBitfeild(int[] my_bitfeild)
 	{
-		PAYLOAD_LEN = my_bitfeild.length;
+		PAYLOAD_LEN = (int) Math.ceil((double)my_bitfeild.length/8);
 		MESSAGE_LEN = MESSAGE_TYPE_LEN + PAYLOAD_LEN;
 		Total_len = MESSAGE_LENGTH_SIZE + MESSAGE_TYPE_LEN + PAYLOAD_LEN;
-		//byte[] message =
-		byte[] mess_length = Integer.toString(MESSAGE_LEN).getBytes();
-		byte[] mess_type = "5".getBytes();
-		byte[] payload = integersToBytes(my_bitfeild);
-		ByteBuffer message = ByteBuffer.wrap(new byte[Total_len]);
-		message.put(mess_length);
-		message.put(mess_type);
-		message.put(payload);
-		/*System.arraycopy(mess_length, 0, message, 0, MESSAGE_LENGTH_SIZE);
-		System.arraycopy(mess_type, 0, message, MESSAGE_LENGTH_SIZE, MESSAGE_TYPE_LEN);
-		System.arraycopy(payload, 0, message, MESSAGE_LENGTH_SIZE + MESSAGE_TYPE_LEN, PAYLOAD_LEN);
-		}
-		catch (Exception e)
-		{
-			message = null;
-		}*/
+		ByteBuffer msg_len = ByteBuffer.allocate(4);
+		ByteBuffer msg_typ = ByteBuffer.allocate(1);
+		ByteBuffer payload = ByteBuffer.allocate(PAYLOAD_LEN);
 
+		msg_len.putInt(MESSAGE_LEN);
+		msg_typ.put((byte)5);
+		BitSet bits = new BitSet(my_bitfeild.length);
+		int count = 0;
+		for (int i = 0;i <my_bitfeild.length; i++) {
+			if(my_bitfeild[i] == 2){
+				bits.set(i,true);
+			}else{
+				bits.set(i,false);
+			}
+		}
+		payload.put(bits.toByteArray());
+		ByteBuffer message = ByteBuffer.allocate(Total_len);
+		message.put(msg_len.array());
+		message.put(msg_typ.array());
+		message.put(payload.array());
 		return message.array();
 	}
 
 	public static int[] convertToIntArray(byte[] input)
 	{
-	    int[] ret = new int[input.length];
-	    for (int i = 0; i < input.length; i++)
-	    {
-	        ret[i] = input[i] & 0xff; // Range 0 to 255, not -128 to 127
-	    }
-	    return ret;
+	    int[] bit_field = new int[peerProcess.piece_cnt];
+	    BitSet bits = BitSet.valueOf(input);
+
+		for (int i = 0; i < peerProcess.piece_cnt; i++) {
+			if(bits.get(i)){
+				bit_field[i] = 2;
+			}else{
+				bit_field[i] = 0;
+			}
+		}
+		return bit_field;
 	}
 
 	public static int[] receiveBitfeild(byte[] bitfieldmessage)
@@ -364,16 +373,8 @@ public class MessageType {
 		PAYLOAD_LEN = bitfieldmessage.length - MESSAGE_LENGTH_SIZE - MESSAGE_TYPE_LEN;
 		MESSAGE_LEN = MESSAGE_TYPE_LEN + PAYLOAD_LEN;
 		byte[] message = new byte[PAYLOAD_LEN];
-		try
-		{
-		System.arraycopy(bitfieldmessage, MESSAGE_LENGTH_SIZE+MESSAGE_TYPE_LEN, message, 0, PAYLOAD_LEN);
-		}
-		catch (Exception e)
-		{
-			message = null;
-		}
-
+		ByteBuffer byte_received = ByteBuffer.wrap(bitfieldmessage);
+		System.arraycopy(bitfieldmessage,MESSAGE_LENGTH_SIZE+MESSAGE_TYPE_LEN,message,0,PAYLOAD_LEN);
 		return convertToIntArray(message);
-
 	}
 }
