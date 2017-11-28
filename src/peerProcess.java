@@ -490,7 +490,7 @@ class ServerController implements Runnable{
             for (Integer peer_id : peerProcess.peer_info_map.keySet()) {
 //                System.out.println("Key = " + key);
                 if(peer_id != peerProcess.my_peer_id) {
-                    if (topk.contains(peer_id) || topk.size() == 0) {
+                    if (topk.contains(peer_id)) {
                         peerProcess.peer_choke_status.put(peer_id, false);    //unchoke them
 
                         //if not presently connected, try to connect. send "HAVE piece_id"
