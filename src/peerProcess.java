@@ -1,3 +1,4 @@
+import javax.sound.midi.Soundbank;
 import java.io.*;
 import java.net.ConnectException;
 import java.net.ServerSocket;
@@ -382,10 +383,12 @@ class ListeningThread implements Runnable{
                                     out_stream.writeObject(MessageType.sendInterested());// send interested message after recieving have.
                                     boolean unchoke_condition = MessageType.receiveUnchoke((byte[]) input_stream.readObject()); // receive unchoke after accepting the interested.
                                     if(unchoke_condition){
+                                        System.out.println("Recieved unchoke.");
                                         spawnThread = new Thread(new ClientThread(this.listeningSocket,server_cc_socket, received_peer_id,input_stream,out_stream));
                                         peerProcess.present_client_connections.add(received_peer_id);
                                         spawnThread.start();	//TODO HANDLE in thread: //1. server_cc_socket.close(); 2.  present_client_connections.remove()
                                     }else{
+                                        System.out.println("received choke.");
                                         server_cc_socket.close();
                                     }
                                 }else{
@@ -488,7 +491,7 @@ class ServerController implements Runnable{
 
          // Iterating over keys only: https://stackoverflow.com/questions/1066589/iterate-through-a-hashmap
             for (Integer peer_id : peerProcess.peer_info_map.keySet()) {
-//                System.out.println("Key = " + key);
+
                 if(peer_id != peerProcess.my_peer_id) {
                     if (topk.contains(peer_id)) {
                         peerProcess.peer_choke_status.put(peer_id, false);    //unchoke them
@@ -541,9 +544,12 @@ class ServerController implements Runnable{
                                 System.out.println("connection is refused. No peer in the network.");
                             }
                         }
+
                     } else {
                         //If this server was currently sending. it will not send next piece. and send choke to it from Server Thread
-                        peerProcess.peer_choke_status.put(peer_id, true);    //choke them
+                        //if(topk.size() != 0){
+                            peerProcess.peer_choke_status.put(peer_id, true);    //choke them
+                        //}
 //            		TODO Ensure CLEAN EXIT:
 //            		in SERVER THREAD: send "choke" on exit: CHECK WHILE LOOP
 //            	    in Client THREAD: handle receive "choke"
@@ -640,7 +646,6 @@ class ClientController implements Runnable{
                         peerProcess.present_server_connections.add(peer_id);
 
                         if(peerProcess.getPieceId(peer_id)!= -1){	//updateServerBitField(server_bitfield,peerProcess.peer_bitfields.get(peer_id))){
-
                             out_to_server_obj.writeObject(MessageType.sendInterested());
                             System.out.println("Interested message sent.");
                             byte[] message_frm_server =  (byte[]) in_frm_server_obj.readObject();
@@ -711,13 +716,9 @@ class ServerThread implements Runnable{
 
     @Override
     public void run(){
-
+        System.out.println("Server thread started.");
         while (peerProcess.peer_choke_status.get(client_peer_id)!=true && !this.live_connection.isClosed()) {
             try {
-                //DataInputStream  in_from_client = new DataInputStream (this.listeningSocket.getInputStream());
-                //DataOutputStream out_to_client = new DataOutputStream(this.listeningSocket.getOutputStream());
-                //if(mssg_from_client.equals("interested")){
-                System.out.println("Server thread started.");
                 this.out_to_client.writeObject(MessageType.sendUnchoke());
                 System.out.println("Sent unchoke to client");
                 Boolean conn_status = true;
@@ -740,8 +741,17 @@ class ServerThread implements Runnable{
 //			if(invalid request) break the connection
 //			send the piece requested.
         }
-        peerProcess.present_client_connections.remove(this.client_peer_id);
-        System.out.println("thread closed");
+        try {
+            if(peerProcess.peer_choke_status.get(client_peer_id)){
+                this.out_to_client.writeObject(MessageType.sendChoke());
+                System.out.println("sent choke to :" + client_peer_id);
+            }
+            peerProcess.present_client_connections.remove(this.client_peer_id);
+            System.out.println("Server thread closed");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 
     public static void sendFile(String file_name, ServerSocket server_cc_socket, ObjectInputStream in_from_client , ObjectOutputStream out_to_client) {
@@ -810,13 +820,11 @@ class ClientThread implements Runnable{
 //        }
 
     	try {
-            //DataOutputStream out_to_server_obj = new DataOutputStream(this.remoteSocket.getOutputStream());
-            //DataInputStream in_frm_server_obj = new DataInputStream(this.remoteSocket.getInputStream());
-            //out_to_server_obj.writeObject(this.piece);
-            int piece_id = peerProcess.getPieceId(server_peer_id);
-            while (piece_id != -1) {
-                System.out.println("Client thread started.");
+            System.out.println("Client thread started.");
 
+            int piece_id = peerProcess.getPieceId(server_peer_id);
+
+            while (piece_id != -1) {
                 long start= System.currentTimeMillis();
                 this.out_to_server.writeObject(Integer.toString(piece_id));
                 System.out.println("Piece number sent to the server");
@@ -840,6 +848,7 @@ class ClientThread implements Runnable{
                 peerProcess.peer_download_rate.put(server_peer_id, rate);
 
                 peerProcess.my_bitfield[piece_id] = 2;
+
                 piece_id = peerProcess.getPieceId(server_peer_id);
 
                 if(piece_id == -1){
@@ -848,6 +857,7 @@ class ClientThread implements Runnable{
                     this.out_to_server.writeObject(true);
                 }
             }
+
             System.out.println("Complete file received at Client");
             peerProcess.present_server_connections.remove(this.server_peer_id);
             this.remoteSocket.close();
