@@ -19,18 +19,16 @@ public class MessageType {
 		MESSAGE_LEN = MESSAGE_TYPE_LEN + PAYLOAD_LEN;
 		Total_len = MESSAGE_LENGTH_SIZE + MESSAGE_TYPE_LEN + PAYLOAD_LEN;
 		byte[] message = new byte[Total_len];
+		byte[] mess_length = new byte[MESSAGE_LENGTH_SIZE];
 		try
 		{
-		byte[] mess_length = Integer.toString(MESSAGE_LEN).getBytes();
-		byte[] mess_type = "0".getBytes();
-		//byte[] pid = (Integer.toString(peerId)).getBytes();
-		System.arraycopy(mess_length, 0, message, 0, MESSAGE_LENGTH_SIZE);
-		System.arraycopy(mess_type, 0, message, MESSAGE_LENGTH_SIZE, MESSAGE_TYPE_LEN);
-		//System.arraycopy(pid, 0, message, HEADER_LEN + ZERO_BITS_LEN, ID_LEN);
+			mess_length = ByteBuffer.allocate(4).putInt(1).array();
+			System.arraycopy(mess_length, 0, message, 0, MESSAGE_LENGTH_SIZE);
+			message[MESSAGE_LENGTH_SIZE] = (byte) 0;
 		}
 		catch (Exception e)
 		{
-			message = null;
+			e.printStackTrace();
 		}
 
 		return message;
@@ -43,20 +41,19 @@ public class MessageType {
 		PAYLOAD_LEN = 0;
 		MESSAGE_LEN = MESSAGE_TYPE_LEN + PAYLOAD_LEN;
 		Total_len = MESSAGE_LENGTH_SIZE + MESSAGE_TYPE_LEN + PAYLOAD_LEN;
-        byte[] msgtype = new byte[MESSAGE_TYPE_LEN];
+		byte[] msgtype = new byte[MESSAGE_TYPE_LEN];
 		try
-        {
-            if(message.length!= Total_len)
-                throw new Exception("Handshake message length incorrect");
-            System.arraycopy(message, 0, msgtype, MESSAGE_LENGTH_SIZE, MESSAGE_TYPE_LEN);
-            String received_message_type = new String(msgtype);
-            if(received_message_type!="0")
-            	return false;
-        }
-        catch (Exception e) {
+		{
+			if(message.length!= Total_len)
+				throw new Exception("Handshake message length incorrect");
+			Byte type = new Byte(message[MESSAGE_LENGTH_SIZE]);
+			if(type.intValue() != 0)
+				return false;
+		}
+		catch (Exception e) {
 
-        }
-        return true;
+		}
+		return true;
 
     }
 
@@ -66,18 +63,16 @@ public class MessageType {
 		MESSAGE_LEN = MESSAGE_TYPE_LEN + PAYLOAD_LEN;
 		Total_len = MESSAGE_LENGTH_SIZE + MESSAGE_TYPE_LEN + PAYLOAD_LEN;
 		byte[] message = new byte[Total_len];
+		byte[] mess_length = new byte[MESSAGE_LENGTH_SIZE];
 		try
 		{
-		byte[] mess_length = Integer.toString(MESSAGE_LEN).getBytes();
-		byte[] mess_type = "1".getBytes();
-		//byte[] pid = (Integer.toString(peerId)).getBytes();
-		System.arraycopy(mess_length, 0, message, 0, MESSAGE_LENGTH_SIZE);
-		System.arraycopy(mess_type, 0, message, MESSAGE_LENGTH_SIZE, MESSAGE_TYPE_LEN);
-		//System.arraycopy(pid, 0, message, HEADER_LEN + ZERO_BITS_LEN, ID_LEN);
+			mess_length = ByteBuffer.allocate(4).putInt(1).array();
+			System.arraycopy(mess_length, 0, message, 0, MESSAGE_LENGTH_SIZE);
+			message[MESSAGE_LENGTH_SIZE] = (byte) 1;
 		}
 		catch (Exception e)
 		{
-			message = null;
+			e.printStackTrace();
 		}
 
 		return message;
@@ -90,20 +85,19 @@ public class MessageType {
 		PAYLOAD_LEN = 0;
 		MESSAGE_LEN = MESSAGE_TYPE_LEN + PAYLOAD_LEN;
 		Total_len = MESSAGE_LENGTH_SIZE + MESSAGE_TYPE_LEN + PAYLOAD_LEN;
-        byte[] msgtype = new byte[MESSAGE_TYPE_LEN];
+		byte[] msgtype = new byte[MESSAGE_TYPE_LEN];
 		try
-        {
-            if(message.length!= Total_len)
-                throw new Exception("Handshake message length incorrect");
-            System.arraycopy(message, 0, msgtype, MESSAGE_LENGTH_SIZE, MESSAGE_TYPE_LEN);
-            String received_message_type = new String(msgtype);
-            if(received_message_type!="1")
-            	return false;
-        }
-        catch (Exception e) {
+		{
+			if(message.length!= Total_len)
+				throw new Exception("Handshake message length incorrect");
+			Byte type = new Byte(message[MESSAGE_LENGTH_SIZE]);
+			if(type.intValue() != 1)
+				return false;
+		}
+		catch (Exception e) {
 
-        }
-        return true;
+		}
+		return true;
 
     }
 
@@ -113,18 +107,16 @@ public class MessageType {
 		MESSAGE_LEN = MESSAGE_TYPE_LEN + PAYLOAD_LEN;
 		Total_len = MESSAGE_LENGTH_SIZE + MESSAGE_TYPE_LEN + PAYLOAD_LEN;
 		byte[] message = new byte[Total_len];
+		byte[] mess_length = new byte[MESSAGE_LENGTH_SIZE];
 		try
 		{
-		byte[] mess_length = Integer.toString(MESSAGE_LEN).getBytes();
-		byte[] mess_type = "2".getBytes();
-		//byte[] pid = (Integer.toString(peerId)).getBytes();
-		System.arraycopy(mess_length, 0, message, 0, MESSAGE_LENGTH_SIZE);
-		System.arraycopy(mess_type, 0, message, MESSAGE_LENGTH_SIZE, MESSAGE_TYPE_LEN);
-		//System.arraycopy(pid, 0, message, HEADER_LEN + ZERO_BITS_LEN, ID_LEN);
+		 mess_length = ByteBuffer.allocate(4).putInt(1).array();
+		 System.arraycopy(mess_length, 0, message, 0, MESSAGE_LENGTH_SIZE);
+		 message[MESSAGE_LENGTH_SIZE] = (byte) 2;
 		}
 		catch (Exception e)
 		{
-			message = null;
+			e.printStackTrace();
 		}
 
 		return message;
@@ -142,9 +134,8 @@ public class MessageType {
         {
             if(message.length!= Total_len)
                 throw new Exception("Handshake message length incorrect");
-            System.arraycopy(message, 0, msgtype, MESSAGE_LENGTH_SIZE, MESSAGE_TYPE_LEN);
-            String received_message_type = new String(msgtype);
-            if(received_message_type!="2")
+			Byte type = new Byte(message[MESSAGE_LENGTH_SIZE]);
+			if(type.intValue() != 2)
             	return false;
         }
         catch (Exception e) {
@@ -160,18 +151,16 @@ public class MessageType {
 		MESSAGE_LEN = MESSAGE_TYPE_LEN + PAYLOAD_LEN;
 		Total_len = MESSAGE_LENGTH_SIZE + MESSAGE_TYPE_LEN + PAYLOAD_LEN;
 		byte[] message = new byte[Total_len];
+		byte[] mess_length = new byte[MESSAGE_LENGTH_SIZE];
 		try
 		{
-		byte[] mess_length = Integer.toString(MESSAGE_LEN).getBytes();
-		byte[] mess_type = "3".getBytes();
-		//byte[] pid = (Integer.toString(peerId)).getBytes();
-		System.arraycopy(mess_length, 0, message, 0, MESSAGE_LENGTH_SIZE);
-		System.arraycopy(mess_type, 0, message, MESSAGE_LENGTH_SIZE, MESSAGE_TYPE_LEN);
-		//System.arraycopy(pid, 0, message, HEADER_LEN + ZERO_BITS_LEN, ID_LEN);
+			mess_length = ByteBuffer.allocate(4).putInt(1).array();
+			System.arraycopy(mess_length, 0, message, 0, MESSAGE_LENGTH_SIZE);
+			message[MESSAGE_LENGTH_SIZE] = (byte) 3;
 		}
 		catch (Exception e)
 		{
-			message = null;
+			e.printStackTrace();
 		}
 
 		return message;
@@ -180,23 +169,40 @@ public class MessageType {
 	public static boolean receiveNotInterested(byte[] message)
     {
 
+//		PAYLOAD_LEN = 0;
+//		MESSAGE_LEN = MESSAGE_TYPE_LEN + PAYLOAD_LEN;
+//		Total_len = MESSAGE_LENGTH_SIZE + MESSAGE_TYPE_LEN + PAYLOAD_LEN;
+//        byte[] msgtype = new byte[MESSAGE_TYPE_LEN];
+//		try
+//        {
+//            if(message.length!= Total_len)
+//                throw new Exception("Handshake message length incorrect");
+//            System.arraycopy(message, MESSAGE_LENGTH_SIZE, msgtype, 0, msgtype.length);
+//            String received_message_type = new String(msgtype);
+//            if(received_message_type!="3")
+//            	return false;
+//        }
+//        catch (Exception e) {
+//
+//        }
+//        return true;
+
 		PAYLOAD_LEN = 0;
 		MESSAGE_LEN = MESSAGE_TYPE_LEN + PAYLOAD_LEN;
 		Total_len = MESSAGE_LENGTH_SIZE + MESSAGE_TYPE_LEN + PAYLOAD_LEN;
-        byte[] msgtype = new byte[MESSAGE_TYPE_LEN];
+		byte[] msgtype = new byte[MESSAGE_TYPE_LEN];
 		try
-        {
-            if(message.length!= Total_len)
-                throw new Exception("Handshake message length incorrect");
-            System.arraycopy(message, 0, msgtype, MESSAGE_LENGTH_SIZE, MESSAGE_TYPE_LEN);
-            String received_message_type = new String(msgtype);
-            if(received_message_type!="3")
-            	return false;
-        }
-        catch (Exception e) {
+		{
+			if(message.length!= Total_len)
+				throw new Exception("Handshake message length incorrect");
+			Byte type = new Byte(message[MESSAGE_LENGTH_SIZE]);
+			if(type.intValue() != 3)
+				return false;
+		}
+		catch (Exception e) {
 
-        }
-        return true;
+		}
+		return true;
 
     }
 	public static byte[] sendHave(int pieceIndex)
@@ -205,59 +211,82 @@ public class MessageType {
 		MESSAGE_LEN = MESSAGE_TYPE_LEN + PAYLOAD_LEN;
 		Total_len = MESSAGE_LENGTH_SIZE + MESSAGE_TYPE_LEN + PAYLOAD_LEN;
 		byte[] message = new byte[Total_len];
+		byte[] mess_length = new byte[MESSAGE_LENGTH_SIZE];
+		byte[] mess_type = new byte [MESSAGE_TYPE_LEN];
+		byte[] payload = new byte[PAYLOAD_LEN];
 		try
 		{
-		byte[] mess_length = Integer.toString(MESSAGE_LEN).getBytes();
-		byte[] mess_type = "4".getBytes();
-		byte[] payload = (Integer.toString(pieceIndex)).getBytes();
-		System.arraycopy(mess_length, 0, message, 0, MESSAGE_LENGTH_SIZE);
-		System.arraycopy(mess_type, 0, message, MESSAGE_LENGTH_SIZE, MESSAGE_TYPE_LEN);
-		System.arraycopy(payload, 0, message, MESSAGE_LENGTH_SIZE + MESSAGE_TYPE_LEN, PAYLOAD_LEN);
+		    mess_length = ByteBuffer.allocate(4).putInt(1 + PAYLOAD_LEN).array();
+			System.arraycopy(mess_length, 0, message, 0, MESSAGE_LENGTH_SIZE);
+			message[MESSAGE_LENGTH_SIZE] = (byte) 4;
+			payload = ByteBuffer.allocate(4).putInt(pieceIndex).array();
+			System.arraycopy(payload, 0, message, MESSAGE_LENGTH_SIZE + MESSAGE_TYPE_LEN, PAYLOAD_LEN);
+
 		}
 		catch (Exception e)
 		{
 			message = null;
 		}
-
 		return message;
-
 	}
 
 	public static int receiveHave(byte[] message)
     {
 
+//		PAYLOAD_LEN = 4;
+//		MESSAGE_LEN = MESSAGE_TYPE_LEN + PAYLOAD_LEN;
+//		Total_len = MESSAGE_LENGTH_SIZE + MESSAGE_TYPE_LEN + PAYLOAD_LEN;
+//        byte[] msgtype = new byte[MESSAGE_TYPE_LEN];
+//		byte[] returnPieceIndex = new byte[PAYLOAD_LEN];
+//        int result = 0;
+//
+//		try
+//        {
+//            if(message.length!= Total_len)
+//                throw new Exception("Handshake message length incorrect");
+//            System.arraycopy(message, MESSAGE_LENGTH_SIZE, msgtype, 0, msgtype.length);
+//    		System.arraycopy(message, MESSAGE_LENGTH_SIZE + MESSAGE_TYPE_LEN, returnPieceIndex, 0, returnPieceIndex.length);
+//
+//            String received_message_type = new String(msgtype);
+//
+//
+//
+//            if(received_message_type.equals("4"))
+//            	return -1;
+//
+//
+//            for (int i=0; i<4; i++) {
+//              result = ( result << 8 ) - Byte.MIN_VALUE + (int) returnPieceIndex[i];
+//            }
+//            return result;
+//
+//        }
+//        catch (Exception e) {
+//
+//        }
+//        return result;
+
 		PAYLOAD_LEN = 4;
 		MESSAGE_LEN = MESSAGE_TYPE_LEN + PAYLOAD_LEN;
 		Total_len = MESSAGE_LENGTH_SIZE + MESSAGE_TYPE_LEN + PAYLOAD_LEN;
-        byte[] msgtype = new byte[MESSAGE_TYPE_LEN];
-		byte[] returnPieceIndex = new byte[PAYLOAD_LEN];
-        int result = 0;
 
+		int piece = -1;
 		try
-        {
-            if(message.length!= Total_len)
-                throw new Exception("Handshake message length incorrect");
-            System.arraycopy(message, 0, msgtype, MESSAGE_LENGTH_SIZE, MESSAGE_TYPE_LEN);
-    		System.arraycopy(message, 0, returnPieceIndex, MESSAGE_LENGTH_SIZE + MESSAGE_TYPE_LEN, PAYLOAD_LEN);
+		{
+			if(message.length!= Total_len)
+				throw new Exception("piece message length incorrect");
+			Byte type = new Byte(message[MESSAGE_LENGTH_SIZE+MESSAGE_TYPE_LEN]);
+			piece = type.intValue();
+		}
+		catch (Exception e)
+		{
+			piece = -1;
+		}
 
-            String received_message_type = new String(msgtype);
-
-
-
-            if(received_message_type.equals("4"))
-            	return -1;
-
-
-            for (int i=0; i<4; i++) {
-              result = ( result << 8 ) - Byte.MIN_VALUE + (int) returnPieceIndex[i];
-            }
-            return result;
-
-        }
-        catch (Exception e) {
-
-        }
-        return result;
+//		for (int i=0; i<4; i++) {
+//			piece = ( piece << 8 ) - Byte.MIN_VALUE + (int) message[i];
+//		}
+		return piece;
 
     }
 
@@ -269,20 +298,22 @@ public class MessageType {
 		MESSAGE_LEN = MESSAGE_TYPE_LEN + PAYLOAD_LEN;
 		Total_len = MESSAGE_LENGTH_SIZE + MESSAGE_TYPE_LEN + PAYLOAD_LEN;
 		byte[] message = new byte[Total_len];
+		byte[] mess_length = new byte[MESSAGE_LENGTH_SIZE];
+		byte[] mess_type = new byte [MESSAGE_TYPE_LEN];
+		byte[] payload = new byte[PAYLOAD_LEN];
 		try
 		{
-		byte[] mess_length = Integer.toString(MESSAGE_LEN).getBytes();
-		byte[] mess_type = "6".getBytes();
-		byte[] payload = (Integer.toString(pieceIndex)).getBytes();
-		System.arraycopy(mess_length, 0, message, 0, MESSAGE_LENGTH_SIZE);
-		System.arraycopy(mess_type, 0, message, MESSAGE_LENGTH_SIZE, MESSAGE_TYPE_LEN);
-		System.arraycopy(payload, 0, message, MESSAGE_LENGTH_SIZE + MESSAGE_TYPE_LEN, PAYLOAD_LEN);
+			mess_length = ByteBuffer.allocate(4).putInt(1 + PAYLOAD_LEN).array();
+			System.arraycopy(mess_length, 0, message, 0, MESSAGE_LENGTH_SIZE);
+			message[MESSAGE_LENGTH_SIZE] = (byte) 6;
+			payload = ByteBuffer.allocate(4).putInt(pieceIndex).array();
+			System.arraycopy(payload, 0, message, MESSAGE_LENGTH_SIZE + MESSAGE_TYPE_LEN, PAYLOAD_LEN);
+
 		}
 		catch (Exception e)
 		{
 			message = null;
 		}
-
 		return message;
 
 	}
@@ -293,14 +324,16 @@ public class MessageType {
 		MESSAGE_LEN = MESSAGE_TYPE_LEN + PAYLOAD_LEN;
 		Total_len = MESSAGE_LENGTH_SIZE + MESSAGE_TYPE_LEN + PAYLOAD_LEN;
 		byte[] message = new byte[Total_len];
+		byte[] mess_length = new byte[MESSAGE_LENGTH_SIZE];
+		byte[] mess_type = new byte [MESSAGE_TYPE_LEN];
+		byte[] payload = new byte[PAYLOAD_LEN];
 		try
 		{
-		byte[] mess_length = Integer.toString(MESSAGE_LEN).getBytes();
-		byte[] mess_type = "7".getBytes();
-		byte[] payload = (Integer.toString(pieceIndex)).getBytes();
-		System.arraycopy(mess_length, 0, message, 0, MESSAGE_LENGTH_SIZE);
-		System.arraycopy(mess_type, 0, message, MESSAGE_LENGTH_SIZE, MESSAGE_TYPE_LEN);
-		System.arraycopy(payload, 0, message, MESSAGE_LENGTH_SIZE + MESSAGE_TYPE_LEN, PAYLOAD_LEN);
+		    mess_length = ByteBuffer.allocate(4).putInt(1 + PAYLOAD_LEN).array();
+			System.arraycopy(mess_length, 0, message, 0, MESSAGE_LENGTH_SIZE);
+			message[MESSAGE_LENGTH_SIZE] = (byte) 7;
+		    payload = ByteBuffer.allocate(4).putInt(pieceIndex).array();
+		     System.arraycopy(payload, 0, message, MESSAGE_LENGTH_SIZE + MESSAGE_TYPE_LEN, PAYLOAD_LEN);
 		}
 		catch (Exception e)
 		{
@@ -311,11 +344,38 @@ public class MessageType {
 
 	}
 
+
+	public static int receivePiece(byte[] pieceMessage)
+	{
+		PAYLOAD_LEN = 4;
+		MESSAGE_LEN = MESSAGE_TYPE_LEN + PAYLOAD_LEN;
+		Total_len = MESSAGE_LENGTH_SIZE + MESSAGE_TYPE_LEN + PAYLOAD_LEN;
+
+		int piece = -1;
+		try
+		{
+             if(pieceMessage.length!= Total_len)
+			throw new Exception("piece message length incorrect");
+			piece = ByteBuffer.wrap(pieceMessage,MESSAGE_LENGTH_SIZE + MESSAGE_TYPE_LEN,4).getInt();
+			/*Byte[] type = new Byte[](pieceMessage[MESSAGE_LENGTH_SIZE+MESSAGE_TYPE_LEN]);
+			piece = type.intValue();*/
+		}
+		catch (Exception e)
+		{
+			piece = -1;
+		}
+
+//		for (int i=0; i<4; i++) {
+//			piece = ( piece << 8 ) - Byte.MIN_VALUE + (int) message[i];
+//		}
+		return piece;
+
+	}
+
 	static byte[] integersToBytes(int[] values)
 	{
-	   //ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		byte[] bytes = new byte[values.length];
-	   //DataOutputStream dos = new DataOutputStream(baos);
+	   byte[] bytes = new byte[values.length];
+
 	   for(int i=0; i < values.length; ++i)
 	   {
 			bytes[i] = (byte)(values[i] >>> (i * 8));
@@ -373,7 +433,6 @@ public class MessageType {
 		PAYLOAD_LEN = bitfieldmessage.length - MESSAGE_LENGTH_SIZE - MESSAGE_TYPE_LEN;
 		MESSAGE_LEN = MESSAGE_TYPE_LEN + PAYLOAD_LEN;
 		byte[] message = new byte[PAYLOAD_LEN];
-		ByteBuffer byte_received = ByteBuffer.wrap(bitfieldmessage);
 		System.arraycopy(bitfieldmessage,MESSAGE_LENGTH_SIZE+MESSAGE_TYPE_LEN,message,0,PAYLOAD_LEN);
 		return convertToIntArray(message);
 	}
