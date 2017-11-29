@@ -724,12 +724,13 @@ class ServerThread implements Runnable{
         }
         while(!peerProcess.peer_choke_status.get(client_peer_id)) {
             try {
-                this.piece_id = MessageType.receivePiece((byte[]) this.in_frm_client.readObject());
+                this.piece_id = MessageType.receiveRequest((byte[]) this.in_frm_client.readObject());
                 if(this.piece_id == -1){
                     break;
                 }
-                String file_name = peerProcess.my_path + "/sample.txt.part" + this.piece_id;
-                sendFile(file_name, this.listeningSocket, this.in_frm_client, this.out_to_client);
+                this.out_to_client.writeObject(MessageType.sendPiece(this.piece_id));
+                //String file_name = peerProcess.my_path + "/sample.txt.part" + this.piece_id;
+                //sendFile(file_name, this.listeningSocket, this.in_frm_client, this.out_to_client);
 
             } catch (Exception e) {
                 e.printStackTrace();
@@ -831,13 +832,16 @@ class ClientThread implements Runnable{
                 this.out_to_server.writeObject(MessageType.sendRequest(this.piece_id));
                 System.out.println("Piece number sent to the server");
                 peerProcess.my_bitfield[piece_id] = 1;
-                byte[] RecData = new byte[1024];
-                this.in_frm_server.read(RecData, 0, RecData.length);
+                byte[] received_piece = MessageType.receivePiece((byte[]) this.in_frm_server.readObject());
+
+                //byte[] RecData = new byte[1024];
+                //this.in_frm_server.read(RecData, 0, RecData.length);
                 long end = System.currentTimeMillis();
 
-                String SaveFileName = peerProcess.my_path + "sample.txt.part" + piece_id;
+                String SaveFileName = peerProcess.my_path + peerProcess.config_info_map.get("FileName")+ ".part" + piece_id;
+
                 OutputStream Fs = new FileOutputStream(SaveFileName);
-                Fs.write(RecData);
+                Fs.write(received_piece);
                 System.out.println("File " + SaveFileName + " received.");
                 Fs.close();
 
@@ -863,6 +867,8 @@ class ClientThread implements Runnable{
             this.remoteSocket.close();
 
         } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
 

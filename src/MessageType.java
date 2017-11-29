@@ -1,7 +1,8 @@
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.BitSet;
 import java.util.Collections;
 
@@ -320,32 +321,51 @@ public class MessageType {
 
 	public static byte[] sendPiece(int pieceIndex)
 	{
-		PAYLOAD_LEN = 4;
-		MESSAGE_LEN = MESSAGE_TYPE_LEN + PAYLOAD_LEN;
-		Total_len = MESSAGE_LENGTH_SIZE + MESSAGE_TYPE_LEN + PAYLOAD_LEN;
-		byte[] message = new byte[Total_len];
-		byte[] mess_length = new byte[MESSAGE_LENGTH_SIZE];
-		byte[] mess_type = new byte [MESSAGE_TYPE_LEN];
-		byte[] payload = new byte[PAYLOAD_LEN];
 		try
 		{
+			String f_path_str = peerProcess.my_path + peerProcess.config_info_map.get("FileName") + ".part" + pieceIndex;
+			Path f_path = Paths.get(f_path_str);
+			/*FileInputStream file_input_strm = new FileInputStream(file_to_send);
+			BufferedInputStream file_buff_strm = new BufferedInputStream(file_input_strm);*/
+			byte[] file_data = Files.readAllBytes(f_path);
+
+			PAYLOAD_LEN = 4 + file_data.length;
+			MESSAGE_LEN = MESSAGE_TYPE_LEN + PAYLOAD_LEN;
+			Total_len = MESSAGE_LENGTH_SIZE + MESSAGE_TYPE_LEN + PAYLOAD_LEN;
+			byte[] message = new byte[Total_len];
+			byte[] mess_length = new byte[MESSAGE_LENGTH_SIZE];
+			byte[] mess_type = new byte [MESSAGE_TYPE_LEN];
+			byte[] pieceIndx = new byte[4];
+
+
 		    mess_length = ByteBuffer.allocate(4).putInt(1 + PAYLOAD_LEN).array();
 			System.arraycopy(mess_length, 0, message, 0, MESSAGE_LENGTH_SIZE);
 			message[MESSAGE_LENGTH_SIZE] = (byte) 7;
-		    payload = ByteBuffer.allocate(4).putInt(pieceIndex).array();
-		     System.arraycopy(payload, 0, message, MESSAGE_LENGTH_SIZE + MESSAGE_TYPE_LEN, PAYLOAD_LEN);
+			pieceIndx = ByteBuffer.allocate(4).putInt(pieceIndex).array();
+			System.arraycopy(pieceIndx, 0, message, MESSAGE_LENGTH_SIZE + MESSAGE_TYPE_LEN, 4);
+			System.arraycopy(file_data, 0, message, MESSAGE_LENGTH_SIZE + MESSAGE_TYPE_LEN+4, PAYLOAD_LEN-4);
+			return message;
 		}
 		catch (Exception e)
 		{
-			message = null;
+			System.out.println("sending piece failed : " + pieceIndex);
+			return null;
 		}
+	}
 
+	public static byte[] receivePiece(byte[] pieceMessage)
+	{
+		PAYLOAD_LEN = pieceMessage.length - 9;
+		MESSAGE_LEN = MESSAGE_TYPE_LEN + PAYLOAD_LEN;
+		Total_len = MESSAGE_LENGTH_SIZE + MESSAGE_TYPE_LEN + PAYLOAD_LEN;
+		byte[] message = new byte[PAYLOAD_LEN];
+		System.arraycopy(pieceMessage,MESSAGE_LENGTH_SIZE+ MESSAGE_TYPE_LEN + 4,message,0,PAYLOAD_LEN);
 		return message;
 
 	}
 
 
-	public static int receivePiece(byte[] pieceMessage)
+	public static int receiveRequest(byte[] pieceMessage)
 	{
 		PAYLOAD_LEN = 4;
 		MESSAGE_LEN = MESSAGE_TYPE_LEN + PAYLOAD_LEN;
