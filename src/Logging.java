@@ -14,7 +14,7 @@ public class Logging {
 	 }
 
 	 static void writeLog(String message){
-		  String mypeerid = message.substring(message.indexOf('[') +8 , message.indexOf(']'));
+		  String mypeerid = message.substring(message.indexOf('[') + 8 , message.indexOf(']'));
 
 			try {
 				createFile(mypeerid);

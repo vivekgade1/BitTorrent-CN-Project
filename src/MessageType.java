@@ -43,10 +43,12 @@ public class MessageType {
 		MESSAGE_LEN = MESSAGE_TYPE_LEN + PAYLOAD_LEN;
 		Total_len = MESSAGE_LENGTH_SIZE + MESSAGE_TYPE_LEN + PAYLOAD_LEN;
 		byte[] msgtype = new byte[MESSAGE_TYPE_LEN];
+
+
 		try
 		{
 			if(message.length!= Total_len)
-				throw new Exception("Handshake message length incorrect");
+				return false;
 			Byte type = new Byte(message[MESSAGE_LENGTH_SIZE]);
 			if(type.intValue() != 0)
 				return false;
