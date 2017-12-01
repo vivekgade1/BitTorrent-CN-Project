@@ -1,10 +1,9 @@
-import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.BitSet;
-import java.util.Collections;
 
 public class MessageType {
 	public static  int Total_len;
@@ -234,41 +233,7 @@ public class MessageType {
 	}
 
 	public static int receiveHave(byte[] message)
-    {
-
-//		PAYLOAD_LEN = 4;
-//		MESSAGE_LEN = MESSAGE_TYPE_LEN + PAYLOAD_LEN;
-//		Total_len = MESSAGE_LENGTH_SIZE + MESSAGE_TYPE_LEN + PAYLOAD_LEN;
-//        byte[] msgtype = new byte[MESSAGE_TYPE_LEN];
-//		byte[] returnPieceIndex = new byte[PAYLOAD_LEN];
-//        int result = 0;
-//
-//		try
-//        {
-//            if(message.length!= Total_len)
-//                throw new Exception("Handshake message length incorrect");
-//            System.arraycopy(message, MESSAGE_LENGTH_SIZE, msgtype, 0, msgtype.length);
-//    		System.arraycopy(message, MESSAGE_LENGTH_SIZE + MESSAGE_TYPE_LEN, returnPieceIndex, 0, returnPieceIndex.length);
-//
-//            String received_message_type = new String(msgtype);
-//
-//
-//
-//            if(received_message_type.equals("4"))
-//            	return -1;
-//
-//
-//            for (int i=0; i<4; i++) {
-//              result = ( result << 8 ) - Byte.MIN_VALUE + (int) returnPieceIndex[i];
-//            }
-//            return result;
-//
-//        }
-//        catch (Exception e) {
-//
-//        }
-//        return result;
-
+	{
 		PAYLOAD_LEN = 4;
 		MESSAGE_LEN = MESSAGE_TYPE_LEN + PAYLOAD_LEN;
 		Total_len = MESSAGE_LENGTH_SIZE + MESSAGE_TYPE_LEN + PAYLOAD_LEN;
@@ -278,17 +243,15 @@ public class MessageType {
 		{
 			if(message.length!= Total_len)
 				throw new Exception("piece message length incorrect");
-			Byte type = new Byte(message[MESSAGE_LENGTH_SIZE+MESSAGE_TYPE_LEN]);
-			piece = type.intValue();
+			//Byte type = new Byte(message[MESSAGE_LENGTH_SIZE+MESSAGE_TYPE_LEN]);
+
+			piece = ByteBuffer.wrap(Arrays.copyOfRange(message,MESSAGE_LENGTH_SIZE+MESSAGE_TYPE_LEN,message.length)).getInt();
 		}
 		catch (Exception e)
 		{
 			piece = -1;
 		}
 
-//		for (int i=0; i<4; i++) {
-//			piece = ( piece << 8 ) - Byte.MIN_VALUE + (int) message[i];
-//		}
 		return piece;
 
     }
@@ -357,11 +320,11 @@ public class MessageType {
 
 	public static byte[] receivePiece(byte[] pieceMessage)
 	{
-		PAYLOAD_LEN = pieceMessage.length - 9;
-		MESSAGE_LEN = MESSAGE_TYPE_LEN + PAYLOAD_LEN;
-		Total_len = MESSAGE_LENGTH_SIZE + MESSAGE_TYPE_LEN + PAYLOAD_LEN;
+		PAYLOAD_LEN = pieceMessage.length - 5;
+		MESSAGE_LEN = MESSAGE_TYPE_LEN + PAYLOAD_LEN + 4;
+		Total_len = MESSAGE_LENGTH_SIZE + MESSAGE_TYPE_LEN + PAYLOAD_LEN + 4;
 		byte[] message = new byte[PAYLOAD_LEN];
-		System.arraycopy(pieceMessage,MESSAGE_LENGTH_SIZE+ MESSAGE_TYPE_LEN + 4,message,0,PAYLOAD_LEN);
+		System.arraycopy(pieceMessage,MESSAGE_LENGTH_SIZE+ MESSAGE_TYPE_LEN,message,0,PAYLOAD_LEN);
 		return message;
 
 	}
@@ -407,9 +370,10 @@ public class MessageType {
 	   return bytes;
 	}
 
-	public static byte[] sendBitfeild(int[] my_bitfeild)
+	public static byte[] sendBitfield(BitSet my_bitfield)
 	{
-		PAYLOAD_LEN = (int) Math.ceil((double)my_bitfeild.length/8);
+
+		PAYLOAD_LEN = (my_bitfield.size() + 7)/8;
 		MESSAGE_LEN = MESSAGE_TYPE_LEN + PAYLOAD_LEN;
 		Total_len = MESSAGE_LENGTH_SIZE + MESSAGE_TYPE_LEN + PAYLOAD_LEN;
 		ByteBuffer msg_len = ByteBuffer.allocate(4);
@@ -418,16 +382,17 @@ public class MessageType {
 
 		msg_len.putInt(MESSAGE_LEN);
 		msg_typ.put((byte)5);
-		BitSet bits = new BitSet(my_bitfeild.length);
-		int count = 0;
-		for (int i = 0;i <my_bitfeild.length; i++) {
-			if(my_bitfeild[i] == 2){
-				bits.set(i,true);
-			}else{
-				bits.set(i,false);
-			}
-		}
-		payload.put(bits.toByteArray());
+		payload.put(my_bitfield.toByteArray());
+//		BitSet bits = new BitSet(my_bitfeild.length);
+//		int count = 0;
+//		for (int i = 0;i <my_bitfeild.length(); i++) {
+//			if(my_bitfeild.get(i)){
+//				bits.set(i,true);
+//			}else{
+//				bits.set(i,false);
+//			}
+//		}
+//		payload.put(bits.toByteArray());
 		ByteBuffer message = ByteBuffer.allocate(Total_len);
 		message.put(msg_len.array());
 		message.put(msg_typ.array());
@@ -450,12 +415,13 @@ public class MessageType {
 		return bit_field;
 	}
 
-	public static int[] receiveBitfeild(byte[] bitfieldmessage)
+	public static BitSet receiveBitfield(byte[] bitfieldmessage)
 	{
 		PAYLOAD_LEN = bitfieldmessage.length - MESSAGE_LENGTH_SIZE - MESSAGE_TYPE_LEN;
 		MESSAGE_LEN = MESSAGE_TYPE_LEN + PAYLOAD_LEN;
 		byte[] message = new byte[PAYLOAD_LEN];
 		System.arraycopy(bitfieldmessage,MESSAGE_LENGTH_SIZE+MESSAGE_TYPE_LEN,message,0,PAYLOAD_LEN);
-		return convertToIntArray(message);
+		BitSet bitset = BitSet.valueOf(message);
+		return bitset;
 	}
 }
