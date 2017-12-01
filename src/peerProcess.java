@@ -254,16 +254,18 @@ public class peerProcess{
     }
 
     public static void updateUnchokeList(HashSet new_unchoke_list){
-        for(int id : peerProcess.interested_peers){
+        if (new_unchoke_list.size() > 0) {
+            for(int id : peerProcess.interested_peers){
 
-            if (new_unchoke_list.contains(id) ||  peerProcess.presentOptUnchoked.id == id){
-                peer_info_map.get(id).is_choked = false;
-            } else {
-                peer_info_map.get(id).is_choked = true;
+                if (new_unchoke_list.contains(id) ||  peerProcess.presentOptUnchoked.id == id){
+                    peer_info_map.get(id).is_choked = false;
+                } else {
+                    peer_info_map.get(id).is_choked = true;
+                }
             }
+            unchoked_list.clear();
+            unchoked_list.addAll(new_unchoke_list);
         }
-        unchoked_list.clear();
-        unchoked_list.addAll(new_unchoke_list);
     }
 
     public static List<Integer> getInteresteddAndChokedList(){

@@ -102,8 +102,8 @@ public class ConnectionHandler implements Runnable{
                             case 2:// interested
                                 Logging.writeLog("Peer [peer_ID "+this.peerId+"] received the 'interested' message from [peer_ID "+this.remoteId+"].");
 
-                                if(!peerProcess.interested_peers.contains(peerId)){
-                                    peerProcess.interested_peers.add(peerId);
+                                if(!peerProcess.interested_peers.contains(this.remoteId)){
+                                    peerProcess.interested_peers.add(this.remoteId);
                                 }
                                 if(remote_peer.is_choked){
                                     output_to_soc.writeObject(MessageType.sendChoke());

@@ -37,7 +37,7 @@ public class Peer {
         for (int i = 0; i < peerProcess.piece_cnt ; i++) {
             this.bitfield.set(i,this.hasFile);
         }
-        this.is_choked = false;
+        this.is_choked = true;
         this.opt_unchoked = false;
         this.remote_choke = true;
         this.downloadrate = new AtomicInteger(0);

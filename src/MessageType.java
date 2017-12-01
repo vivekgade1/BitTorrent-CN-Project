@@ -197,6 +197,7 @@ public class MessageType {
 		{
 			if(message.length!= Total_len)
 				throw new Exception("Handshake message length incorrect");
+
 			Byte type = new Byte(message[MESSAGE_LENGTH_SIZE]);
 			if(type.intValue() != 3)
 				return false;
