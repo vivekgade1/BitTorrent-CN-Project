@@ -170,25 +170,6 @@ public class MessageType {
 	}
 	public static boolean receiveNotInterested(byte[] message)
     {
-
-//		PAYLOAD_LEN = 0;
-//		MESSAGE_LEN = MESSAGE_TYPE_LEN + PAYLOAD_LEN;
-//		Total_len = MESSAGE_LENGTH_SIZE + MESSAGE_TYPE_LEN + PAYLOAD_LEN;
-//        byte[] msgtype = new byte[MESSAGE_TYPE_LEN];
-//		try
-//        {
-//            if(message.length!= Total_len)
-//                throw new Exception("Handshake message length incorrect");
-//            System.arraycopy(message, MESSAGE_LENGTH_SIZE, msgtype, 0, msgtype.length);
-//            String received_message_type = new String(msgtype);
-//            if(received_message_type!="3")
-//            	return false;
-//        }
-//        catch (Exception e) {
-//
-//        }
-//        return true;
-
 		PAYLOAD_LEN = 0;
 		MESSAGE_LEN = MESSAGE_TYPE_LEN + PAYLOAD_LEN;
 		Total_len = MESSAGE_LENGTH_SIZE + MESSAGE_TYPE_LEN + PAYLOAD_LEN;
@@ -291,8 +272,6 @@ public class MessageType {
 		{
 			String f_path_str = peerProcess.my_path + peerProcess.config_info_map.get("FileName") + ".part" + pieceIndex;
 			Path f_path = Paths.get(f_path_str);
-			/*FileInputStream file_input_strm = new FileInputStream(file_to_send);
-			BufferedInputStream file_buff_strm = new BufferedInputStream(file_input_strm);*/
 			byte[] file_data = Files.readAllBytes(f_path);
 
 			PAYLOAD_LEN = 4 + file_data.length;
@@ -350,10 +329,6 @@ public class MessageType {
 		{
 			piece = -1;
 		}
-
-//		for (int i=0; i<4; i++) {
-//			piece = ( piece << 8 ) - Byte.MIN_VALUE + (int) message[i];
-//		}
 		return piece;
 
 	}
@@ -384,16 +359,7 @@ public class MessageType {
 		msg_len.putInt(MESSAGE_LEN);
 		msg_typ.put((byte)5);
 		payload.put(my_bitfield.toByteArray());
-//		BitSet bits = new BitSet(my_bitfeild.length);
-//		int count = 0;
-//		for (int i = 0;i <my_bitfeild.length(); i++) {
-//			if(my_bitfeild.get(i)){
-//				bits.set(i,true);
-//			}else{
-//				bits.set(i,false);
-//			}
-//		}
-//		payload.put(bits.toByteArray());
+
 		ByteBuffer message = ByteBuffer.allocate(Total_len);
 		message.put(msg_len.array());
 		message.put(msg_typ.array());

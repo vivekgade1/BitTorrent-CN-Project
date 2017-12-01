@@ -17,7 +17,6 @@ public class peerProcess{
     public static int my_cnt=0;
     public static int max_bitfield_count;	//piece_count*2: every field in the my_bitsfield would be 2.
     public static String my_path;
-    public static Logger myLogger;
     static ServerSocket listening_socket;
     static Thread listening_thread;
     static Peer presentOptUnchoked = null;
@@ -158,15 +157,8 @@ public class peerProcess{
 
     public static void main(String args[]) throws IOException {
         System.out.print("welcome: "+args[0]+"\n");
-        myLogger = Logger.getLogger("InfoLogging");
 
         initialSetup(args[0]);
-
-        //peerProcess pp = new peerProcess();
-
-        //pp.listening_port = Integer.parseInt(peerProcess.peer_info_map.get(my_peer_id).split(" ")[1]);
-
-        //		start Listening thread, and Server and Client controllers for peerProcess
         try {
             peerProcess.listening_socket = new ServerSocket(peerProcess.my_info.port);
             peerProcess.listening_thread = new Thread(new ListeningThread(peerProcess.listening_socket));
@@ -257,7 +249,7 @@ public class peerProcess{
         if (new_unchoke_list.size() > 0) {
             for(int id : peerProcess.interested_peers){
 
-                if (new_unchoke_list.contains(id) ||  peerProcess.presentOptUnchoked.id == id){
+                if (new_unchoke_list.contains(id) || ((peerProcess.presentOptUnchoked != null) && peerProcess.presentOptUnchoked.id == id)){
                     peer_info_map.get(id).is_choked = false;
                 } else {
                     peer_info_map.get(id).is_choked = true;

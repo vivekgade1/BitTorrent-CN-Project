@@ -18,19 +18,10 @@ public class UnchokeTask extends TimerTask {
 
     @Override
     public void run() {
-        // find the K max downloadable peers
-        //List<Integer> peers = this.pHandle.getPreferredPeers();
         List<Integer> peers = peerProcess.interested_peers;
         selectedTopK(peers);
-        /*if (peerProcess.my_info.hasFile){
-
-        } else {
-            findKprefferedpeerondwnRate(peers, false);
-        }*/
 
         HashSet<Integer> new_unchoked_list = new HashSet<Integer>();
-        //System.out.print("New Unchoke peers list: ");
-        //this.pHandle.reload(); //clear unchoked list
 
         for (Peer p : peerMinQueue){
             if (!peerProcess.unchoked_list.contains(p.id)){ // if the is choked
@@ -43,7 +34,6 @@ public class UnchokeTask extends TimerTask {
         }
 
         peerProcess.updateUnchokeList(new_unchoked_list); //reset the current unchoked peer and add new one
-        //	System.out.println();
         if (peerProcess.presentOptUnchoked != null){
             peerProcess.unchoked_list.add(peerProcess.presentOptUnchoked.id);
         }
@@ -80,7 +70,7 @@ public class UnchokeTask extends TimerTask {
         } else {
             for (int i=0; i < peers.size();i++){
                 Peer p = peerProcess.peer_info_map.get(peers.get(i));
-                p.get_downloadrate();//setting the download rate to zero and saving it in rate variable
+                p.get_downloadrate();
                 if (this.peerMinQueue.size() >= this.preferredN){
                     Peer top = this.peerMinQueue.peek();
                     if (top.rate == p.rate){

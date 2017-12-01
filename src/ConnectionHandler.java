@@ -3,17 +3,14 @@ import java.io.*;
 import java.nio.*;
 import java.util.*;
 
-
-
-
 public class ConnectionHandler implements Runnable{
     int peerId;
     int remoteId = -1;
     boolean isconnection = false;
     public Socket socket = null;
-    private ObjectInputStream read_frm_soc;	//stream read from the socket
+    private ObjectInputStream read_frm_soc;
     private boolean isunchoked;
-    private  ObjectOutputStream output_to_soc;    //stream write to the socket
+    private  ObjectOutputStream output_to_soc;
     boolean isConnected;
 
     public ConnectionHandler(int peerId,Socket socket){
@@ -168,14 +165,12 @@ public class ConnectionHandler implements Runnable{
 
 
         } else {
-            //LogConfig.getLogRecord().debugLog("Connection is closed");
             isConnected = false;
             try {
                 socket.close();
                 isConnected = false;
             } catch (IOException e) {
-                // TODO Auto-generated catch block
-                //e.printStackTrace();
+
             }
 
         }
