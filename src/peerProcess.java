@@ -1,4 +1,5 @@
 import java.io.*;
+import java.net.ConnectException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.*;
@@ -9,7 +10,7 @@ public class peerProcess{
     static Peer my_info;
     public static int my_peer_id;
     public static HashMap<String, String> config_info_map = new HashMap<>();
-    public static  HashMap<Integer, Peer> peer_info_map = new HashMap<>();
+    public static  HashMap<Integer,Peer> peer_info_map = new HashMap<>();
     public static int preferred_neighbor_limit;
     public static int unchoking_interval;
     public static int opt_unchoking_interval;
@@ -33,11 +34,11 @@ public class peerProcess{
         new File("peer_" + my_id).mkdir();
 //		read common.cfg and peer_info.cfg
         try {
-            File common_config_file = new File("src/common.cfg");
+            File common_config_file = new File("Common.cfg");
             FileInputStream commons_file_reader = new FileInputStream(common_config_file);
             BufferedReader commons_buff_reader = new BufferedReader(new InputStreamReader(commons_file_reader));
 
-            File peer_info_file = new File("src/PeerInfo.cfg");
+            File peer_info_file = new File("PeerInfo.cfg");
             FileInputStream peer_file_reader = new FileInputStream(peer_info_file);
             BufferedReader peer_buff_reader = new BufferedReader(new InputStreamReader(peer_file_reader));
             String line = null;
@@ -183,13 +184,17 @@ public class peerProcess{
             for (int peerId: peerProcess.peer_info_map.keySet()) {
                 if(peerId < peerProcess.my_peer_id){
                     try {
-                        Peer peer = peerProcess.peer_info_map.get(peerId);
-                        Socket requestSocket = null;
-                        requestSocket = new Socket(peer.ip, peer.port);
-                        ConnectionHandler connection  = new ConnectionHandler(peerProcess.my_peer_id,peer.id,requestSocket);
-                        active_connections.put(peerId,connection);
-                        startConnection(connection);
-                    } catch (IOException e) {
+                        if(active_connections.get(peerId) == null) {
+                            Peer peer = peerProcess.peer_info_map.get(peerId);
+                            Socket requestSocket = null;
+                            requestSocket = new Socket(peer.ip, peer.port);
+                            ConnectionHandler connection = new ConnectionHandler(peerProcess.my_peer_id, peer.id, requestSocket);
+                            active_connections.put(peerId,connection);
+                            startConnection(connection);
+                        }
+                    }catch (ConnectException e) {
+                        System.out.println("Connection is refused as the peer is not in the network.");
+                    }catch (IOException e) {
                         e.printStackTrace();
                     }
                 }
@@ -235,7 +240,7 @@ public class peerProcess{
     };
 
     public static void IsSomethingLeftToDownload(){
-        if(!peerProcess.my_info.hadFile && peerProcess.my_info.bitfield.cardinality() == piece_cnt){
+        if(!peerProcess.my_info.hadFile && peerProcess.my_info.bitfield.cardinality() == piece_cnt && peerProcess.my_info.hasFile){
             mergeFile();
             Logging.writeLog("Peer [peer_ID "+peerProcess.my_peer_id+"] has downloaded the complete file.");
         }
@@ -245,7 +250,7 @@ public class peerProcess{
         peerProcess.peer_info_map.get(peerId).updateBitField(bit_field);
     }
 
-    public static void updateUnchokeList(HashSet new_unchoke_list){
+    public static void updateUnchokeList(HashSet<Integer> new_unchoke_list){
         if (new_unchoke_list.size() > 0) {
             for(int id : peerProcess.interested_peers){
 

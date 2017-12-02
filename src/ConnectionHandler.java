@@ -81,13 +81,13 @@ public class ConnectionHandler implements Runnable{
                         switch (type.intValue()){
                             case 0:// choke
                                 // nothing just add him to the choke list.
-                                remote_peer.remote_choke = true;
                                 Logging.writeLog("Peer [peer_ID "+this.peerId+"] is choked by Peer [peer_ID "+this.remoteId+"].");
+
+                                remote_peer.remote_choke = true;
 
                                 break;
                             case 1:// unchoke
                                 Logging.writeLog("Peer [peer_ID "+this.peerId+"] is unchoked by Peer [peer_ID "+this.remoteId+"].");
-
                                 int piece_indx = peerProcess.my_info.getPieceToDownload(remote_peer.bitfield);
                                 remote_peer.remote_choke = false;
                                 if(piece_indx != -1){
